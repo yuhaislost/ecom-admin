@@ -9,6 +9,11 @@ import { Modal } from "@/components/modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import axios from 'axios';
+import { AxiosResponse } from 'axios';
+import { toast } from 'sonner';
+import { redirect } from 'next/navigation';
 
 
 const formSchema = z.object({
@@ -19,6 +24,8 @@ export const StoreModal = function()
 {
     const storeModal = useStoreModal();
 
+    const [loading, setLoading] = useState(false);
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -28,7 +35,35 @@ export const StoreModal = function()
 
     const onSubmit = async function(values : z.infer<typeof formSchema>)
     {
-        console.log(values);
+        setLoading(true);
+
+        const promise = axios.post('/api/stores', values);
+
+        toast.promise(promise, {
+            loading: 'Creating a store...',
+            success: (res: AxiosResponse<any,any>) => {
+                window.location.assign(`/${res.data.id}`);
+                return `${res.data.name} has been created!`
+            }, 
+            error: "Something went wrong while creating a store."
+        });
+
+        setLoading(false);
+
+        // try{
+        //     setLoading(true);
+        //     toast.loading("Creating a store.");
+
+        //     const res = await axios.post('/api/stores', values);
+            
+        //     console.log(res.data);
+        //     toast.success("Created a store.");
+        // }catch(error)
+        // {
+        //     toast.error("Something went wrong while creating a store!");
+        // } finally {
+        //     setLoading(false);
+        // }
     }
 
     return (
@@ -41,16 +76,16 @@ export const StoreModal = function()
                                 <FormItem>
                                     <FormLabel>Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={"E-commerce store"} {...field}/>
+                                        <Input disabled={loading} placeholder={"E-commerce store"} {...field} autoComplete='off'/>
                                     </FormControl>
                                     <FormMessage/>
                                 </FormItem>
                             )}/>
                             <div className='pt-6 space-x-2 flex items-center justify-end w-full'>
-                                <Button variant={'outline'} onClick={storeModal.onClose}>
+                                <Button variant={'outline'} onClick={storeModal.onClose} disabled={loading}>
                                     Cancel
                                 </Button>
-                                <Button type='submit'>
+                                <Button type='submit' disabled={loading}>
                                     Continue
                                 </Button>
                             </div>
